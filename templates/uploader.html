@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>PDF Uploader</title>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+		<style>
+			html, body {
+				height: 100%;
+				margin: 0 !important;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				background-color: rgb(40, 64, 153);
+			}
+
+			.dropzone {
+				width: 75vw;
+				height: 75vh;
+				padding: 0 !important;
+				border: 2px dashed rgb(67, 170, 253);
+				color: white;
+				margin: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+				font-size: 1.2em;
+				background-color: rgb(51, 74, 156);
+			}
+		
+			#checkbox-container {
+				position: absolute;
+				top: 10px;
+				left: 10px;
+				z-index: 10;
+				background-color: rgba(255, 255, 255, 0.7);
+				border-radius: 5px;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="dropzone" class="dropzone" />
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+		<script>
+			let currentToast;
+
+			const showToast = (text, backgroundColor) => {
+				if( currentToast )
+					currentToast.hideToast();
+
+				currentToast = Toastify({
+					text: text,
+					duration: 3000,
+					close: true,
+					backgroundColor: backgroundColor
+				}).showToast();
+			};
+
+			Dropzone.options.dropzone = {
+				url: '/upload_pdf',
+				paramName: 'file',
+				maxFiles: 1,
+				acceptedFiles: '.pdf',
+				dictDefaultMessage: 'Drop files here or click to upload.',
+				init: function() {
+					this.on('success', function(file, response) {
+						if( response.status === 'ok' ){
+							// Convert the base64 string to a Uint8Array
+							const byteCharacters = atob(response.pdf);
+							const byteNumbers = new Array(byteCharacters.length);
+
+							for (let i = 0; i < byteCharacters.length; i++) {
+								byteNumbers[i] = byteCharacters.charCodeAt(i);
+							}
+
+							const byteArray = new Uint8Array(byteNumbers);
+
+							// Create a Blob 
+							const blob = new Blob([byteArray], { type: "application/pdf" });
+
+							// Create a URL for the Blob and download the file
+							const url = window.URL.createObjectURL(blob);
+							const a = document.createElement('a');
+							a.href = url;
+							a.download = file.name;
+							document.body.appendChild(a);
+							
+							a.click();
+
+							document.body.removeChild(a);
+							window.URL.revokeObjectURL(url);
+
+							// Remove the file from Dropzone after successful upload
+							this.removeFile(file);
+
+							showToast('File downloaded', 'green')
+						} else if( response.status === 'error' )
+							showToast(response.descr, 'orange')
+						else
+							showToast('Unknown error', 'red')
+					});
+
+					this.on('error', function(file, response) {
+						console.error('Upload error: ', response);
+
+						showToast(response.descr, 'red')
+
+						// Remove the file from Dropzone after error received
+						this.removeFile(file);
+					});
+				}
+			};
+		</script>
+	</body>
+</html>
