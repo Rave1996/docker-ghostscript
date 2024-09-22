@@ -1,7 +1,7 @@
-FROM python:3.12.6-slim
+FROM python:3.12.6-alpine3.20
 
 # Install Ghostscript
-RUN apt-get update && apt-get install -y ghostscript
+RUN apk add ghostscript
 
 # Establish working dir
 WORKDIR /app
