@@ -109,7 +109,7 @@
 					this.on('error', function(file, response) {
 						console.error('Upload error: ', response);
 
-						showToast(response.descr, 'red')
+						showToast(response, 'red')
 
 						// Remove the file from Dropzone after error received
 						this.removeFile(file);
